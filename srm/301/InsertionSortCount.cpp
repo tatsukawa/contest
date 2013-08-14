@@ -4,6 +4,7 @@
 using namespace std;
 
 class InsertionSortCount {
+public:
     int countMoves(vector<int> A) {
         return insertSort(A);
     }
