@@ -1,4 +1,5 @@
 .DS_Store
 test.cpp
+*.in
 *.out
 *.exe
