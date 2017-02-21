@@ -47,7 +47,10 @@ public:
         }
     }
 
-    void solve();
+    void solve(int);
+    void beam_search();
+    void annealing();
+    void hill_climbing();
 
     void debug(vector<string> &b) {
 #if DEBUG
@@ -124,10 +127,10 @@ int Board::count(vector<string>& b) {
     return o + x;
 }
 
-void Board::solve() {
-    int beam_width = 30;
-    int compute_count = 20;
-    int max_step = 70;
+void Board::beam_search(){
+    int beam_width = 20;
+    int compute_count = 15;
+    int max_step = 50;
 
     double p_plus = 0.4;
     double p_minus = 0.7;
@@ -150,7 +153,7 @@ void Board::solve() {
                 brd = bs[beam_index];
 
                 if(compute_cnt != 0) {
-                    int i = size - rand_i(mt) % (size / 5) - 1;
+                    int i = size - rand_i(mt) % (size / 6) - 1;
                     for(int j = 0; j < size; j++) {
                         if(not (brd[i][j] == 'o' or brd[i][j] == 'x')) {
                             double p = random_gen(mt);
@@ -185,10 +188,92 @@ void Board::solve() {
     output_board = bs[0];
 }
 
+
+void Board::annealing() {
+
+}
+
+void Board::hill_climbing() {
+    auto tmp = remove_dots(board);
+    auto best_node = board;
+    int best_score = count(tmp);
+
+    pair<int, int> now = {size-1, 0};
+    const char SET[3] = {'-', '+', '.'};
+
+    // complexity = step * 4 * 2 * 50 * 50
+    for(int step = 0; step < 1000; step++) {
+        bool invalid_step = true;
+
+        for(int i = 0; i < 4; i++) {
+            int nx = now.second + dx[i];
+            int ny = now.first + dy[i];
+
+            if(not can_access(ny, nx)) continue;
+            if(board[ny][nx] == 'o' or board[ny][nx] == 'x') continue;
+
+            for(int j = 0; j < 3; j++) {
+                char c = SET[j];
+                board[ny][nx] = c;
+                tmp = remove_dots(board);
+                int now_score = count(tmp);
+                if(now_score > best_score) {
+                    best_node = board;
+                    best_score = now_score;
+                    now.first = ny;
+                    now.second = nx;
+                    invalid_step = false;
+                }
+            }
+        }
+
+        if(invalid_step) {
+            now.second++;
+            now.first -= now.second / size;
+            if(now.first == size - 10) {
+                now.first = size - 1;
+            }
+            now.second %= size;
+        }
+#if DEBUG
+        cout << best_score << "," << now.first << ", " << now.second <<  endl;
+#endif
+    }
+
+    output_board = best_node;
+}
+
+void Board::solve(int select = 0) {
+    switch(select) {
+        case 0:
+            beam_search();
+            break;
+        case 1:
+            annealing();
+            break;
+        case 2:
+            hill_climbing();
+            break;
+        case 3:
+#if DEBUG
+            cout << "BEAM SEARCH" << endl;
+#endif
+            beam_search();
+            board = output_board;
+#if DEBUG
+            cout << "HILL CLIMBING" << endl;
+#endif
+            hill_climbing();
+            break;
+        default:
+            break;
+    }
+}
+
 int main()
 {
     Board b;
     b.input();
-    b.solve();
+    b.solve(3);
     b.output();
 }
