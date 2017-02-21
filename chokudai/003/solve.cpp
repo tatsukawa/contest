@@ -33,7 +33,7 @@ public:
 
     void input() {
         string s;
-        size = -1;
+        size = 0;
         while (cin >> s) {
             board.emplace_back(s);
             output_board.emplace_back(s);
@@ -52,24 +52,33 @@ public:
     void debug(vector<string> &b) {
 #if DEBUG
         cout << "[DEBUG BEGIN]" << endl;
-        for (auto &s : b) {
-            cout << s << endl;
+        for(int i = 0; i < size; i++) {
+            cout << b[i] << endl;
         }
         cout << "[DEBUG END]" << endl;
 #endif
         return;
     }
 };
+
 vector<string> Board::remove_dots(vector<string> b) {
-    for(int i = size-1; i >= 0; i--) {
-        for(int j = 0; j < size; j++) {
-            if(b[i][j] != '.') continue;
-            for(int k = i-1; k >= 0; k--) {
-                if(b[k+1][j] != '.') break;
-                b[k+1][j] = b[k][j];
+    for(int x = 0; x < size; x++) {
+        int y = size - 1;
+        while(y >= 0) {
+            if(b[y][x] == '.') {
+                int tail = 0;
+                for(int yy = y-1; yy >= 0; yy--) {
+                    if(b[yy][x] == '-') {
+                        tail = yy+1;
+                        break;
+                    } else {
+                        b[yy+1][x] = b[yy][x];
+                    }
+                }
+                b[tail][x] = '#';
+            } else {
+                y--;
             }
-            b[0][j] = '#';
-            if(b[i][j] == '.') j--;
         }
     }
     return b;
@@ -110,24 +119,24 @@ int Board::count(vector<string>& b) {
         }
     }
 #if DEBUG
-    cout << o << ", " << x << endl;
+//    cout << o << ", " << x << endl;
 #endif
-    return o * x;
+    return o + x;
 }
 
 void Board::solve() {
-    int beam_width = 80;
-    int compute_count = 10;
-    int max_step = 40;
+    int beam_width = 30;
+    int compute_count = 20;
+    int max_step = 70;
 
     double p_plus = 0.4;
-    double p_minus = 0.6;
+    double p_minus = 0.7;
 
     vector<string> tmp;
     vector<vector<string>> boards(beam_width * compute_count, std::vector<string>(size));
     vector<pair<int, int>> scores(beam_width * compute_count);
     vector<vector<string>> bs(beam_width, vector<string>(size));
-    uniform_int_distribution<int> rand_i(0, size);
+    uniform_int_distribution<int> rand_i(0, size - 1);
 
     for(int i = 0; i < beam_width; i++) {
         bs[i] = board;
@@ -141,7 +150,7 @@ void Board::solve() {
                 brd = bs[beam_index];
 
                 if(compute_cnt != 0) {
-                    int i = rand_i(mt);
+                    int i = size - rand_i(mt) % (size / 5) - 1;
                     for(int j = 0; j < size; j++) {
                         if(not (brd[i][j] == 'o' or brd[i][j] == 'x')) {
                             double p = random_gen(mt);
@@ -164,11 +173,12 @@ void Board::solve() {
 
         sort(scores.begin(), scores.end(), greater<pair<int, int>>());
 
+#if DEBUG
+        cout << "score: " << scores[0].first << ", index: " << scores[0].second << endl;
+#endif
+
         for(int i = 0; i < beam_width; i++) {
             bs[i] = boards[scores[i].second];
-#if DEBUG
-            cout << "score: " << scores[i].first << ", index: " << scores[i].second << endl;
-#endif
         }
     }
 
